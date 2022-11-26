@@ -3,9 +3,9 @@ var mysql = require("mysql");
 const pool = mysql.createPool({
   host: "remotemysql.com",
   port: "3306",
-  user: "mwoK6cXco9",
-  password: "mPRdaz4fBF",
-  database: "mwoK6cXco9",
+  user: "n8iU6eOeCM",
+  password: "Yke6P5cMSE",
+  database: "n8iU6eOeCM",
 });
 
 // ... later
