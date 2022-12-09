@@ -60,6 +60,26 @@ exports.getBarang = function (req, res) {
   );
 };
 
+exports.getBarangById = function (req, res) {
+  var key = req.query.key;
+
+  connection.query(
+    `SELECT * from barang WHERE barang.key = ?`,
+    [key],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success",
+          data: rows[0],
+        });
+      }
+    }
+  );
+};
+
 exports.getAllBarang = function (req, res) {
   connection.query(
     `SELECT b.*, k.nama as nama_kategori from barang as b LEFT JOIN master_kategori as k ON b.id_kategori = k.key`,
@@ -96,7 +116,7 @@ exports.getPenjualan = function (req, res) {
 
 exports.getPembelian = function (req, res) {
   connection.query(
-    `SELECT * from master_pembelian`,
+    `SELECT * from master_pembelian ORDER BY insert_date DESC`,
     function (error, rows, field) {
       if (error) {
         console.log(error);
@@ -175,6 +195,24 @@ exports.getKeranjang = function (req, res) {
   );
 };
 
+exports.getKeranjangBeli = function (req, res) {
+  connection.query(
+    `SELECT * from keranjang_pembelian as k
+    LEFT JOIN barang as b ON k.id_barang = b.key`,
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success",
+          data: rows,
+        });
+      }
+    }
+  );
+};
+
 exports.getKeranjangJasa = function (req, res) {
   connection.query(
     `SELECT * from keranjang_jasa as k
@@ -198,6 +236,28 @@ exports.getDetailKeranjang = function (req, res) {
 
   connection.query(
     `SELECT * from keranjang as k
+    LEFT JOIN barang as b ON k.id_barang = b.key
+    WHERE id_barang = ?`,
+    [id_barang],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success",
+          data: rows,
+        });
+      }
+    }
+  );
+};
+
+exports.getDetailKeranjangBeli = function (req, res) {
+  var id_barang = req.query.id_barang;
+
+  connection.query(
+    `SELECT * from keranjang_pembelian as k
     LEFT JOIN barang as b ON k.id_barang = b.key
     WHERE id_barang = ?`,
     [id_barang],
@@ -239,7 +299,7 @@ exports.getDetailKeranjangJasa = function (req, res) {
 
 exports.getDetailJasa = function (req, res) {
   connection.query(
-    `SELECT dj.*, j.nama_jasa, j.harga_jasa, j.insert_date from detail_jasa as dj LEFT JOIN jasa as j ON dj.id_jasa = j.key`,
+    `SELECT dj.*, j.nama_jasa, j.harga_jasa, j.insert_date from detail_jasa as dj LEFT JOIN jasa as j ON dj.id_jasa = j.key ORDER BY j.insert_date DESC`,
     function (error, rows, field) {
       if (error) {
         console.log(error);
@@ -257,14 +317,15 @@ exports.getDetailJasa = function (req, res) {
 exports.postBarang = function (req, res) {
   var nama = req.body.nama;
   var harga = req.body.harga;
+  var harga_supplier = req.body.harga_supplier;
   var satuan = req.body.satuan;
   var image = req.body.image;
   var stok = req.body.stok;
   var id_kategori = req.body.id_kategori;
 
   connection.query(
-    `INSERT INTO barang (nama, harga, satuan, image, stok, id_kategori) VALUES (?, ?, ?, ?, ?, ?)`,
-    [nama, harga, satuan, image, stok, id_kategori],
+    `INSERT INTO barang (nama, harga, harga_supplier, satuan, image, stok, id_kategori) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [nama, harga, harga_supplier, satuan, image, stok, id_kategori],
     function (error, rows, field) {
       if (error) {
         console.log(error);
@@ -322,13 +383,12 @@ exports.postPenjualan = function (req, res) {
 
 exports.postPembelian = function (req, res) {
   var nomor_struk = req.body.nomor_struk;
-  var nama_supplier = req.body.nama_supplier;
-  var nomor_telefon = req.body.nomor_telefon;
   var total_harga = req.body.total_harga;
+  var nama_supplier = req.body.nama_supplier;
 
   connection.query(
-    `INSERT INTO master_pembelian (nomor_struk, nama_supplier, nomor_telefon, total_harga) VALUES (?, ?, ?, ?)`,
-    [nomor_struk, nama_supplier, nomor_telefon, total_harga],
+    `INSERT INTO master_pembelian (nomor_struk, total_harga, nama_supplier) VALUES (?, ?, ?)`,
+    [nomor_struk, total_harga, nama_supplier],
     function (error, rows, field) {
       if (error) {
         console.log(error);
@@ -434,6 +494,25 @@ exports.postKeranjang = function (req, res) {
   );
 };
 
+exports.postKeranjangBeli = function (req, res) {
+  var id_barang = req.body.id_barang;
+
+  connection.query(
+    `INSERT INTO keranjang_pembelian (id_barang, jumlah_barang) VALUES (?, ?)`,
+    [id_barang, 1],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success insert data",
+        });
+      }
+    }
+  );
+};
+
 exports.postKeranjangJasa = function (req, res) {
   var id_jasa = req.body.id_jasa;
 
@@ -458,6 +537,25 @@ exports.putKeranjang = function (req, res) {
 
   connection.query(
     `UPDATE keranjang set jumlah_barang = (jumlah_barang + 1) WHERE id_barang = ?`,
+    [id_barang],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success update data",
+        });
+      }
+    }
+  );
+};
+
+exports.putKeranjangBeli = function (req, res) {
+  var id_barang = req.body.id_barang;
+
+  connection.query(
+    `UPDATE keranjang_pembelian set jumlah_barang = (jumlah_barang + 1) WHERE id_barang = ?`,
     [id_barang],
     function (error, rows, field) {
       if (error) {
@@ -585,6 +683,26 @@ exports.putDetailKeranjang = function (req, res) {
   );
 };
 
+exports.putDetailKeranjangBeli = function (req, res) {
+  var id_barang = parseInt(req.body.id_barang);
+  var jumlah_barang = parseInt(req.body.jumlah_barang);
+
+  connection.query(
+    `UPDATE keranjang_pembelian as kp set jumlah_barang = ? WHERE kp.id_barang = ?`,
+    [jumlah_barang, id_barang],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success update data",
+        });
+      }
+    }
+  );
+};
+
 exports.putDetailKeranjangJasa = function (req, res) {
   var id_jasa = parseInt(req.body.id_jasa);
   var jumlah = parseInt(req.body.jumlah);
@@ -618,6 +736,22 @@ exports.deleteAllKeranjang = function (req, res) {
   });
 };
 
+exports.deleteAllKeranjangBeli = function (req, res) {
+  connection.query(
+    `TRUNCATE keranjang_pembelian;`,
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success truncate data",
+        });
+      }
+    }
+  );
+};
+
 exports.deleteKeranjangJasa = function (req, res) {
   connection.query(`TRUNCATE keranjang_jasa;`, function (error, rows, field) {
     if (error) {
@@ -634,6 +768,24 @@ exports.deleteKeranjangJasa = function (req, res) {
 exports.getTotalHarga = function (req, res) {
   connection.query(
     `SELECT (SUM(k.jumlah_barang * b.harga)) as total_harga FROM keranjang as k
+    LEFT JOIN barang as b ON k.id_barang = b.key`,
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success",
+          data: rows,
+        });
+      }
+    }
+  );
+};
+
+exports.getTotalHargaBeli = function (req, res) {
+  connection.query(
+    `SELECT (SUM(k.jumlah_barang * b.harga_supplier)) as total_harga FROM keranjang_pembelian as k
     LEFT JOIN barang as b ON k.id_barang = b.key`,
     function (error, rows, field) {
       if (error) {
@@ -751,6 +903,25 @@ exports.deleteKeranjang = function (req, res) {
   );
 };
 
+exports.deleteKeranjangBeli = function (req, res) {
+  var id_barang = req.query.id_barang;
+
+  connection.query(
+    `DELETE from keranjang_pembelian WHERE id_barang = ?;`,
+    [id_barang],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success delete data",
+        });
+      }
+    }
+  );
+};
+
 exports.deleteBarang = function (req, res) {
   var key = req.query.key;
 
@@ -764,6 +935,32 @@ exports.deleteBarang = function (req, res) {
         res.json({
           status: "00",
           message: "Success delete data",
+        });
+      }
+    }
+  );
+};
+
+exports.putDataBarang = function (req, res) {
+  var nama = req.body.nama;
+  var harga = req.body.harga;
+  var harga_supplier = req.body.harga_supplier;
+  var satuan = req.body.satuan;
+  var image = req.body.image;
+  var stok = req.body.stok;
+  var id_kategori = req.body.id_kategori;
+  var key = req.body.key;
+
+  connection.query(
+    `UPDATE barang SET nama=?, harga=?, harga_supplier=?, satuan=?, image=?, stok=?, id_kategori=? WHERE barang.key=?`,
+    [nama, harga, harga_supplier, satuan, image, stok, id_kategori, key],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success update data",
         });
       }
     }

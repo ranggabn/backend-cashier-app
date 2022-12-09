@@ -5,7 +5,7 @@ var morgan = require("morgan");
 const app = express();
 var cors = require("cors");
 
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(bodyParser({ limit: "50mb" }));
 app.use(bodyParser.json());
 app.use(morgan("dev"));
