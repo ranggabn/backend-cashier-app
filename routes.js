@@ -26,6 +26,7 @@ module.exports = function (app) {
   app.route("/getPelanggan").get(jsonku.getPelanggan);
   app.route("/getKeranjangByNomor").get(jsonku.getKeranjangByNomor);
   app.route("/getBarangById").get(jsonku.getBarangById);
+  app.route("/getLaporanKeuangan").get(jsonku.getLaporanKeuangan);
 
   app.route("/postBarang").post(jsonku.postBarang);
   app.route("/postJasa").post(jsonku.postJasa);

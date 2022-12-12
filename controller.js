@@ -966,3 +966,30 @@ exports.putDataBarang = function (req, res) {
     }
   );
 };
+
+exports.getLaporanKeuangan = function (req, res) {
+  connection.query(
+    `SELECT mp.insert_date, 
+    COALESCE(SUM(dp.jumlah_barang * b.harga), 0) as penjualan, 
+    COALESCE(SUM(dj.jumlah * j.harga_jasa), 0) as jasa_giling,
+    COALESCE(SUM(dp.jumlah_barang * b.harga_supplier), 0) as pengeluaran, 
+    SUM(COALESCE((dj.jumlah * j.harga_jasa), 0) + COALESCE((dp.jumlah_barang * b.harga), 0) - COALESCE((dp.jumlah_barang * b.harga_supplier), 0)) as keuntungan
+    FROM master_penjualan as mp
+    LEFT JOIN detail_penjualan as dp ON mp.nomor_struk = dp.nomor_struk
+    LEFT JOIN detail_jasa as dj ON mp.nomor_struk = dj.nomor_struk
+    LEFT JOIN barang as b ON dp.id_barang = b.key
+    LEFT JOIN jasa as j ON dj.id_jasa = j.key
+    GROUP BY mp.insert_date`,
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success get data.",
+          data: rows,
+        });
+      }
+    }
+  );
+};
