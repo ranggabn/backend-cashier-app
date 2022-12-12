@@ -821,7 +821,7 @@ exports.getTotalHargaJasa = function (req, res) {
 
 exports.getPelanggan = function (req, res) {
   connection.query(
-    `SELECT * from master_penjualan WHERE nama_pelanggan is not null AND nama_pelanggan != '' GROUP BY nomor_telefon;`,
+    `SELECT * from master_penjualan WHERE nama_pelanggan is not null AND nama_pelanggan != '';`,
     function (error, rows, field) {
       if (error) {
         console.log(error);
