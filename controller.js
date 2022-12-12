@@ -821,7 +821,7 @@ exports.getTotalHargaJasa = function (req, res) {
 
 exports.getPelanggan = function (req, res) {
   connection.query(
-    `SELECT * from master_penjualan WHERE nama_pelanggan is not null AND nama_pelanggan != '';`,
+    `SELECT * from master_penjualan WHERE nama_pelanggan is not null AND nama_pelanggan != '' GROUP BY nama_pelanggan;`,
     function (error, rows, field) {
       if (error) {
         console.log(error);
@@ -844,6 +844,7 @@ exports.getKeranjangByNomor = function (req, res) {
     LEFT JOIN detail_penjualan as dp ON mp.nomor_struk = dp.nomor_struk
     LEFT JOIN barang as b ON dp.id_barang = b.key
     WHERE nama_pelanggan is not null AND nama_pelanggan != '' AND nomor_telefon = ?
+    GROUP BY (b.key)
     ORDER BY mp.key DESC;`,
     [nomor_telefon],
     function (error, rows, field) {
