@@ -51,36 +51,103 @@ exports.login = function (req, res) {
     username: req.body.username,
   };
 
-  var query = "SELECT username FROM ?? WHERE ??=? AND ??=?";
-  var table = [
-    "user",
-    "password",
-    md5(post.password),
-    "username",
-    post.username,
-  ];
+  connection.query(
+    "SELECT * FROM user WHERE role=2 AND username=?",
+    [post.username],
+    function (error, rows) {
+      if (rows.length > 0) {
+        var query = "SELECT username, role FROM ?? WHERE ??=? AND ??=?";
+        var table = [
+          "user",
+          "password",
+          md5(post.password),
+          "username",
+          post.username,
+        ];
 
-  query = mysql.format(query, table);
-  connection.query(query, function (error, rows) {
-    if (error) {
-      console.log(error);
-    } else {
-      if (rows.length == 1) {
-        var token = jwt.sign({ rows }, config.secret, {
-          expiresIn: "12h",
-        });
-        res.json({
-          status: "00",
-          message: "Login success",
-          token: token,
-          data: rows[0],
+        query = mysql.format(query, table);
+        connection.query(query, function (error, rows) {
+          if (error) {
+            console.log(error);
+          } else {
+            if (rows.length == 1) {
+              var token = jwt.sign({ rows }, config.secret, {
+                expiresIn: "12h",
+              });
+              res.json({
+                status: "00",
+                message: "Login success",
+                token: token,
+                data: rows[0],
+              });
+            } else {
+              res.json({
+                status: "99",
+                message: "Username atau password anda salah",
+              });
+            }
+          }
         });
       } else {
         res.json({
           status: "99",
-          message: "Username atau password anda salah",
+          message: "Username tidak ditemukan",
         });
       }
     }
-  });
+  );
+};
+
+exports.loginAdmin = function (req, res) {
+  var post = {
+    password: req.body.password,
+    username: req.body.username,
+  };
+  console.log(post);
+
+  connection.query(
+    "SELECT * FROM user WHERE role=1 AND username=?",
+    [post.username],
+    function (error, rows, field) {
+      if (rows.length > 0) {
+        var query = "SELECT username, role FROM ?? WHERE ??=? AND ??=?";
+        var table = [
+          "user",
+          "password",
+          md5(post.password),
+          "username",
+          post.username,
+        ];
+
+        query = mysql.format(query, table);
+        connection.query(query, function (error, rows) {
+          if (error) {
+            console.log(error);
+          } else {
+            if (rows.length == 1) {
+              var token = jwt.sign({ rows }, config.secret, {
+                expiresIn: "12h",
+              });
+              res.json({
+                status: "00",
+                message: "Login success",
+                token: token,
+                data: rows[0],
+              });
+            } else {
+              res.json({
+                status: "99",
+                message: "Username atau password anda salah",
+              });
+            }
+          }
+        });
+      } else {
+        res.json({
+          status: "99",
+          message: "Username tidak terdaftar.",
+        });
+      }
+    }
+  );
 };
