@@ -95,8 +95,35 @@ exports.getAllBarang = function (req, res) {
 };
 
 exports.getPenjualan = function (req, res) {
+  var tahun = req.query.tahun;
+  var bulan = req.query.bulan;
+  var tanggal = req.query.tanggal;
+
   connection.query(
-    `SELECT * from penjualan as mp ORDER BY mp.id_penjualan DESC`,
+    `SELECT * from penjualan as mp WHERE YEAR(insert_date) LIKE ? AND DATE_FORMAT(insert_date,'%Y-%m') LIKE ? AND DATE_FORMAT(insert_date,'%Y-%m-%d') LIKE ? ORDER BY mp.id_penjualan DESC`,
+    ["%" + tahun + "%", "%" + bulan + "%", "%" + tanggal + "%"],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success",
+          data: rows,
+        });
+      }
+    }
+  );
+};
+
+exports.getTotalPenjualan = function (req, res) {
+  var tahun = req.query.tahun;
+  var bulan = req.query.bulan;
+  var tanggal = req.query.tanggal;
+
+  connection.query(
+    `SELECT SUM(total_harga) as total from penjualan WHERE YEAR(insert_date) LIKE ? AND DATE_FORMAT(insert_date,'%Y-%m') LIKE ? AND DATE_FORMAT(insert_date,'%Y-%m-%d') LIKE ?;`,
+    ["%" + tahun + "%", "%" + bulan + "%", "%" + tanggal + "%"],
     function (error, rows, field) {
       if (error) {
         console.log(error);
@@ -112,8 +139,35 @@ exports.getPenjualan = function (req, res) {
 };
 
 exports.getPembelian = function (req, res) {
+  var tahun = req.query.tahun;
+  var bulan = req.query.bulan;
+  var tanggal = req.query.tanggal;
+
   connection.query(
-    `SELECT * from pembelian ORDER BY insert_date DESC`,
+    `SELECT * from pembelian WHERE YEAR(insert_date) LIKE ? AND DATE_FORMAT(insert_date,'%Y-%m') LIKE ? AND DATE_FORMAT(insert_date,'%Y-%m-%d') LIKE ? ORDER BY insert_date DESC`,
+    ["%" + tahun + "%", "%" + bulan + "%", "%" + tanggal + "%"],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success",
+          data: rows,
+        });
+      }
+    }
+  );
+};
+
+exports.getTotalPembelian = function (req, res) {
+  var tahun = req.query.tahun;
+  var bulan = req.query.bulan;
+  var tanggal = req.query.tanggal;
+
+  connection.query(
+    `SELECT SUM(total_harga) as total from pembelian WHERE YEAR(insert_date) LIKE ? AND DATE_FORMAT(insert_date,'%Y-%m') LIKE ? AND DATE_FORMAT(insert_date,'%Y-%m-%d') LIKE ?;`,
+    ["%" + tahun + "%", "%" + bulan + "%", "%" + tanggal + "%"],
     function (error, rows, field) {
       if (error) {
         console.log(error);
@@ -256,7 +310,7 @@ exports.getDetailKeranjangBeli = function (req, res) {
   connection.query(
     `SELECT * from keranjang_pembelian as k
     LEFT JOIN barang as b ON k.id_barang = b.id_barang
-    WHERE id_barang = ?`,
+    WHERE b.id_barang = ?`,
     [id_barang],
     function (error, rows, field) {
       if (error) {
@@ -295,12 +349,44 @@ exports.getDetailKeranjangJasa = function (req, res) {
 };
 
 exports.getDetailJasa = function (req, res) {
+  var tahun = req.query.tahun;
+  var bulan = req.query.bulan;
+  var tanggal = req.query.tanggal;
+
   connection.query(
     `SELECT dj.*, j.nama_jasa, j.harga_jasa, p.insert_date, j.nama_mesin, j.waktu 
     from detail_jasa as dj 
     LEFT JOIN jasa as j ON dj.id_jasa = j.id_jasa
     LEFT JOIN penjualan as p ON dj.nomor_struk = p.nomor_struk
+    WHERE YEAR(p.insert_date) LIKE ? AND DATE_FORMAT(p.insert_date,'%Y-%m') LIKE ? AND DATE_FORMAT(p.insert_date,'%Y-%m-%d') LIKE ?
     ORDER BY dj.nomor_struk DESC`,
+    ["%" + tahun + "%", "%" + bulan + "%", "%" + tanggal + "%"],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success",
+          data: rows,
+        });
+      }
+    }
+  );
+};
+
+exports.getTotalJasa = function (req, res) {
+  var tahun = req.query.tahun;
+  var bulan = req.query.bulan;
+  var tanggal = req.query.tanggal;
+
+  connection.query(
+    `SELECT SUM(dj.jumlah * j.harga_jasa) as total
+    from detail_jasa as dj 
+    LEFT JOIN jasa as j ON dj.id_jasa = j.id_jasa
+    LEFT JOIN penjualan as p ON dj.nomor_struk = p.nomor_struk
+    WHERE YEAR(p.insert_date) LIKE ? AND DATE_FORMAT(p.insert_date,'%Y-%m') LIKE ? AND DATE_FORMAT(p.insert_date,'%Y-%m-%d') LIKE ?;`,
+    ["%" + tahun + "%", "%" + bulan + "%", "%" + tanggal + "%"],
     function (error, rows, field) {
       if (error) {
         console.log(error);
@@ -981,6 +1067,10 @@ exports.putDataBarang = function (req, res) {
 };
 
 exports.getLaporanKeuangan = function (req, res) {
+  var tahun = req.query.tahun;
+  var bulan = req.query.bulan;
+  var tanggal = req.query.tanggal;
+
   connection.query(
     `SELECT DATE_FORMAT(mp.insert_date, '%Y-%m-%d') as insert_date,
     COALESCE(SUM(dp.jumlah_barang * b.harga), 0) as penjualan,
@@ -992,7 +1082,41 @@ exports.getLaporanKeuangan = function (req, res) {
     LEFT JOIN detail_jasa as dj ON mp.nomor_struk = dj.nomor_struk
     LEFT JOIN barang as b ON dp.id_barang = b.id_barang
     LEFT JOIN jasa as j ON dj.id_jasa = j.id_jasa
-    GROUP BY DATE_FORMAT(mp.insert_date, '%Y-%m-%d')`,
+    WHERE YEAR(mp.insert_date) LIKE ? AND DATE_FORMAT(mp.insert_date,'%Y-%m') LIKE ? AND DATE_FORMAT(mp.insert_date,'%Y-%m-%d') LIKE ? 
+    GROUP BY DATE_FORMAT(mp.insert_date, '%Y-%m-%d')
+    ORDER BY mp.insert_date DESC;`,
+    ["%" + tahun + "%", "%" + bulan + "%", "%" + tanggal + "%"],
+    function (error, rows, field) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json({
+          status: "00",
+          message: "Success get data.",
+          data: rows,
+        });
+      }
+    }
+  );
+};
+
+exports.getTotalKeuangan = function (req, res) {
+  var tahun = req.query.tahun;
+  var bulan = req.query.bulan;
+  var tanggal = req.query.tanggal;
+
+  connection.query(
+    `SELECT
+      COALESCE(SUM(dp.jumlah_barang * b.harga) + SUM(dj.jumlah * j.harga_jasa), 0) as pemasukkan,
+      COALESCE(SUM(dp.jumlah_barang * b.harga_supplier), 0) as pengeluaran,
+      SUM(COALESCE((dj.jumlah * j.harga_jasa), 0) + COALESCE((dp.jumlah_barang * b.harga), 0) - COALESCE((dp.jumlah_barang * b.harga_supplier), 0)) as keuntungan
+      FROM penjualan as mp
+      LEFT JOIN detail_penjualan as dp ON mp.nomor_struk = dp.nomor_struk
+      LEFT JOIN detail_jasa as dj ON mp.nomor_struk = dj.nomor_struk
+      LEFT JOIN barang as b ON dp.id_barang = b.id_barang
+      LEFT JOIN jasa as j ON dj.id_jasa = j.id_jasa
+      WHERE YEAR(mp.insert_date) LIKE ? AND DATE_FORMAT(mp.insert_date,'%Y-%m') LIKE ? AND DATE_FORMAT(mp.insert_date,'%Y-%m-%d') LIKE ?;`,
+    ["%" + tahun + "%", "%" + bulan + "%", "%" + tanggal + "%"],
     function (error, rows, field) {
       if (error) {
         console.log(error);
